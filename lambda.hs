@@ -33,28 +33,25 @@ split_closing_paren' n before (c:rest) = split_closing_paren' n (c:before) rest
 split_closing_paren :: String -> (String, String)
 split_closing_paren = split_closing_paren' 0 ""
 
-tokenize :: (String,[Expression]) -> [Expression]
-tokenize ("", exprs) = exprs
-tokenize (('\\':rest), exprs) = let (head, body) = rest `split_on` '.' in
+tokenize :: [Expression] -> String -> [Expression]
+tokenize exprs "" = exprs
+tokenize exprs ('\\':rest) = let (head, body) = rest `split_on` '.' in
     -- \a.a b == (\a.a)b
     if ' ' `elem` body then
         let (body', rest') = body `split_on` ' ' in
-            tokenize (rest', (Func head $ parse body'):exprs)
+            tokenize ((Func head $ parse body'):exprs) rest'
     else 
-        tokenize ("", (Func head $ parse body):exprs)
-tokenize (('(':rest), exprs) = let (inner, after) = split_closing_paren rest in
-    tokenize (after, (parse inner): exprs)
+        tokenize ((Func head $ parse body):exprs) ""
+tokenize exprs ('(':rest) = let (inner, after) = split_closing_paren rest in
+    tokenize ((parse inner): exprs) after
 -- Skip spaces, error on periods
-tokenize ((' ':rest, exprs)) = tokenize (rest, exprs)
-tokenize (('.':rest, exprs)) = error "Stray . found"
+tokenize exprs (' ':rest) = tokenize exprs rest
+tokenize exprs ('.':rest) = error "Stray . found"
 -- Any other chars are Vars
-tokenize ((x:rest, exprs)) = tokenize (rest, Var x:exprs)
-
-tokens :: String -> [Expression]
-tokens string = tokenize (string, [])
+tokenize exprs (x:rest) = tokenize (Var x:exprs) rest
 
 parse :: String -> Expression
-parse = Appl . reverse . tokens
+parse = Appl . reverse . tokenize []
 
 -- β-reduces the expression once
 reduce :: Expression -> Expression

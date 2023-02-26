@@ -9,6 +9,8 @@ The amazing part is that it's about 100 lines of code with a lot of comments and
 Make sure that you have [`ghc`](https://www.haskell.org/ghc/) installed and in your Path. Then you can compile [`lambda.hs`](lambda.hs).
 
 ```shell
+> git clone https://github.com/theRealProHacker/lambda.git
+> cd lambda
 > ghc --make lambda
 ```
 
@@ -46,7 +48,7 @@ In [`lambda.hs`](lambda.hs) you can see this line
 debug = False
 ```
 
-If you set `debug` to `True` you can see the steps of the reduction process, which is perfect for introspection because it also dumps the ast.
+If you set `debug` to `True` you can see the steps of the reduction process, which is perfect for introspection because it also dumps the ast at every step.
 
 ## In the interpreter
 
@@ -62,10 +64,14 @@ Ok, one module loaded.
 CallStack (from HasCallStack):
   error, called at ilambda.hs:30:32 in main:Main
 *Main> beta "(\\a.a)b"
-"b"  
+"b"
 ```
 
 ## The future of this
+
+### Built-in α-konversion
+
+When applying a function, either the variables in the function body or in the applied expression needs to be alpha converted
 
 ### Files and variables
 
@@ -82,7 +88,7 @@ Or = \ab.a(True)b
 ```
 
 But that'd just become more and more like Haskell.
-Also, I'd probably rather implement that in Python or really anything else but in Haskell or Brainfuck.
+Also, I'd probably rather implement that in Python or really anything else but in Haskell.
 
 ### Haskell transpiler
 
@@ -95,31 +101,12 @@ x a b = a b
 ```
 
 ## Random Fun
-Just for fun I put the smallest "possible" compressed version of [`ilambda.hs`](ilambda.hs) (the already compressed version) here, which is just 24 lines of code. I'll bet you that you can't make it much smaller. The code is technically not exactly the same because errors are thrown implicitly but nice and shiny explicit errors that tell you exactly where you went wrong aren't really a requirement. 
+Just for fun I put the smallest "possible" compressed version of [`ilambda.hs`](ilambda.hs) (the already compressed version) here, which is just 5 lines of code. I'll bet you that you can't make it much smaller. The code is technically not exactly the same because errors are thrown implicitly but nice and shiny explicit errors that tell you exactly where you went wrong aren't really a requirement. 
 
 ```hs
-data Expression = Var Char | Func String Expression | Appl [Expression] deriving (Show, Eq)
-showExpr (Var c) = [c]
-showExpr (Func head body) = "(\\" ++ head ++ "." ++ (showExpr body) ++ ")"
-showExpr (Appl xs) = foldl (++) [] $ map showExpr xs
-_split_on s1 (c:s2) x = if c == x then (s1, s2) else _split_on (s1++[c]) s2 x
-split_closing_paren' n before (c:rest) = if c == ')' then if n==0 then (reverse before, rest) else split_closing_paren' (n-1) before rest else if c=='(' then split_closing_paren' (n+1) before rest else split_closing_paren' n (c:before) rest
-split_closing_paren = split_closing_paren' 0 ""
-tokenize ("", exprs) = exprs
-tokenize (('\\':rest), exprs) = let (head, body) = _split_on "" rest '.' in if ' ' `elem` body then let (body', rest') = _split_on "" body ' ' in tokenize (rest', (Func head $ parse body'):exprs) else tokenize ("", (Func head $ parse body):exprs)
-tokenize (('(':rest), exprs) = let (inner, after) = split_closing_paren rest in tokenize (after, (parse inner): exprs)
-tokenize ((' ':rest, exprs)) = tokenize (rest, exprs)
-tokenize ((x:rest, exprs)) = tokenize (rest, Var x:exprs)
-parse string = Appl $ reverse $ tokenize (string, [])
-replaceArg c e var@(Var x) = if c==x then e else var
-replaceArg c e func@(Func head body) = if c `elem` head then func else Func head (replaceArg c e body)
-replaceArg c e (Appl exprs) = Appl $ map (replaceArg c e) exprs
-reduce (Appl [x]) = reduce x
-reduce (Appl ((Func [] body):rest)) = reduce $ Appl (body:rest)
-reduce (Appl ((Func [param] body):arg:arg_rest)) = reduce $ Appl (replaceArg param arg body:arg_rest)
-reduce (Appl ((Func (param1:param_rest) body):arg1:arg_rest)) = reduce $ Appl (Func param_rest (replaceArg param1 arg1 body):arg_rest)
-reduce (Appl exprs) = reduce $ Appl $ map reduce exprs
-reduce (Func head body) = Func head $ reduce body
-reduce x = x
+data Expression = Var Char | Func String Expression | Appl [Expression] deriving (Show, Eq);showExpr x = case x of (Var c) -> [c]; (Func head body) -> "(\\" ++ head ++ "." ++ (showExpr body) ++ ")"; (Appl xs) -> foldl (++) [] $ map showExpr xs;
+_split_on s1 (c:s2) x = if c == x then (s1, s2) else _split_on (s1++[c]) s2 x;split_closing_paren' n before (c:rest) = if c == ')' then if n==0 then (reverse before, rest) else split_closing_paren' (n-1) before rest else if c=='(' then split_closing_paren' (n+1) before rest else split_closing_paren' n (c:before) rest;tokenize exprs str = case str of ""->exprs; '\\':rest -> let (head, body) = _split_on "" rest '.' in if ' ' `elem` body then let (body', rest') = _split_on "" body ' ' in tokenize ((Func head $ parse body'):exprs) rest' else tokenize ((Func head $ parse body):exprs) ""; '(':rest -> let (inner, after) = (split_closing_paren' 0 "" rest) in tokenize ((parse inner): exprs) after; ' ':rest -> tokenize exprs rest; x:rest -> tokenize (Var x:exprs) rest;
+parse = Appl . reverse . tokenize [];replaceArg c e expr = case expr of var@(Var x) -> if c==x then e else var; func@(Func head body) -> if c `elem` head then func else Func head (replaceArg c e body); (Appl exprs) -> Appl $ map (replaceArg c e) exprs;
+reduce x = case x of (Appl [x]) -> reduce x; (Appl ((Func [] body):rest)) -> reduce $ Appl (body:rest); (Appl ((Func [param] body):arg:arg_rest)) -> reduce $ Appl (replaceArg param arg body:arg_rest); (Appl ((Func (param1:param_rest) body):arg1:arg_rest)) -> reduce $ Appl (Func param_rest (replaceArg param1 arg1 body):arg_rest); (Appl exprs) -> reduce $ Appl $ map reduce exprs; (Func head body) -> Func head $ reduce body; _ -> x;
 beta = showExpr . reduce . parse
 ```

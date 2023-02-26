@@ -17,22 +17,20 @@ split_closing_paren' n before (c:rest) = split_closing_paren' n (c:before) rest
 
 split_closing_paren = split_closing_paren' 0 ""
 
-tokenize ("", exprs) = exprs
-tokenize (('\\':rest), exprs) = let (head, body) = rest `split_on` '.' in 
-    if ' ' `elem` body then 
-        let (body', rest') = body `split_on` ' ' in 
-            tokenize (rest', (Func head $ parse body'):exprs) 
+tokenize exprs "" = exprs
+tokenize exprs ('\\':rest) = let (head, body) = rest `split_on` '.' in
+    if ' ' `elem` body then
+        let (body', rest') = body `split_on` ' ' in
+            tokenize ((Func head $ parse body'):exprs) rest'
     else 
-        tokenize ("", (Func head $ parse body):exprs)
-tokenize (('(':rest), exprs) = let (inner, after) = split_closing_paren rest in
-    tokenize (after, (parse inner): exprs)
-tokenize ((' ':rest, exprs)) = tokenize (rest, exprs)
-tokenize (('.':rest, exprs)) = error "Stray . found"
-tokenize ((x:rest, exprs)) = tokenize (rest, Var x:exprs)
+        tokenize ((Func head $ parse body):exprs) ""
+tokenize exprs ('(':rest) = let (inner, after) = split_closing_paren rest in
+    tokenize ((parse inner): exprs) after
+tokenize exprs (' ':rest) = tokenize exprs rest
+tokenize exprs ('.':rest) = error "Stray . found"
+tokenize exprs (x:rest) = tokenize (Var x:exprs) rest
 
-tokens string = tokenize (string, [])
-
-parse = Appl . reverse . tokens
+parse = Appl . reverse . tokenize []
 
 replaceArg c e var@(Var x) = if c==x then e else var
 replaceArg c e func@(Func head body) = if c `elem` head then func else Func head (replaceArg c e body)
