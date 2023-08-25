@@ -58,7 +58,7 @@ reduce :: Expression -> Expression
 -- (a) == a
 reduce (Appl [x]) = reduce x
 -- \.a == a
-reduce (Appl ((Func [] body):rest)) = Appl (body:rest)
+reduce (Appl ((Func [] body):rest)) = Appl (body:reduce rest)
 -- (\a.aa)b == bb
 reduce (Appl ((Func [param] body):arg:arg_rest)) = Appl (replaceInBody param arg body:arg_rest)
 -- (\ab.ba)c == (\b.bc)
