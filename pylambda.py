@@ -103,6 +103,9 @@ class Func(Expression):
         if not var in self.head:
             return Func(self.head, self.body.replace_var(var, wth))
         return self
+    
+    def breduce(self):
+        self.body.breduce()
 
 
 @dataclass
@@ -136,7 +139,8 @@ class Appl(Expression):
             param, func.head = func.head[0], func.head[1:]
             func.body = func.body.replace_var(param, self.xs.pop(1))
         else:
-            self.xs = [_reduce(x) for x in self.xs]
+            for expr in self.xs:
+                expr.breduce()
 
 
 class ParseError(ValueError, SyntaxError):
@@ -173,7 +177,7 @@ def _parse_expr(rest: str) -> list[Expression]:
                 raise ParseError("Found a special character in the head of a function")
             rest = ""
             if " " in body:
-                body, rest = body.rsplit(None, 1)
+                body, rest = body.split(None, 1)
             result.append(Func(head, parse_expr(body)))
         elif first == "(":
             closing = find_closing_paren(rest)
@@ -199,23 +203,25 @@ def parse_expr(text: str) -> Expression:
 def reduce(expr: Expression)->Expression:
     while True:
         old_expr = str(expr)
-        expr = _reduce(expr)
+        expr = simple_reduce(expr)
         reduction_type = "alpha"
         expr.areduce()
         if old_expr == str(expr):
             reduction_type = "beta"
             expr.breduce()
-        expr = _reduce(expr)
+        expr = simple_reduce(expr)
         if old_expr == str(expr):
             return expr
         print(f"Step ({reduction_type}): {old_expr}->{expr}")
 
-def _reduce(expr: Expression)->Expression:
+def simple_reduce(expr: Expression)->Expression:
     match expr:
         case Func("", x):
-            return _reduce(x)
+            return simple_reduce(x)
+        case Func(head, body):
+            return Func(head, simple_reduce(body))
         case Appl([x]):
-            return _reduce(x)
+            return simple_reduce(x)
         case Appl(xs):
             new_xs = []
             for x in xs:
@@ -223,7 +229,7 @@ def _reduce(expr: Expression)->Expression:
                     new_xs.extend(x.xs)
                 else:
                     new_xs.append(x)
-            expr.xs = [_reduce(x) for x in new_xs]
+            expr.xs = [simple_reduce(x) for x in new_xs]
             return expr
     return expr
 
