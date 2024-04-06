@@ -1,35 +1,33 @@
 # \ambda - A Lambda calculator written in Haskell
 
-This was made just for fun inspired by a computer science course in functional programming at Freie Universität Berlin. 
+> Inspired by the course "Funktionale Programmierung" @ FU Berlin
 
-The amazing part is that it's about 100 lines of code with a lot of comments and a cli attached. Without all comments, type signatures and the cli interface, its a bit less than half of that!
+A suite of programs to evaluate lambda calculus expressions. Try it out right now [on the web](https://therealprohacker.github.io/lambda/)
 
-## Update: Now also available in Python
+# How to run locally
 
-I rebuilt the interpreter in Python and also implemented alpha conversion on the way. 
-The Python script is about 240 lines of code with a lot of whitespace and comments
+First you need to install git and clone the repo
+```shell
+> git clone https://github.com/theRealProHacker/lambda.git
+> cd lambda
+```
 
-## How to run
-
-### Python
+## Python
 
 Run the Python script very easily. No dependencies required but at least Python 3.10!
 
 ```shell
-> git clone https://github.com/theRealProHacker/lambda.git
-> cd lambda
 > py pylambda.py
 ```
 
 The script will then ask you to input your lambda expression and evaluate it, when you hit enter. 
 
-### Haskell
+## Haskell
 
+The amazing part is that it's about 100 lines of code with a lot of comments and a cli attached. Without all comments, type signatures and the cli interface, its a bit less than half of that!
 Make sure that you have [`ghc`](https://www.haskell.org/ghc/) installed and in your Path. Then you can compile [`lambda.hs`](lambda.hs).
 
 ```shell
-> git clone https://github.com/theRealProHacker/lambda.git
-> cd lambda
 > ghc --make lambda
 ```
 
@@ -69,7 +67,7 @@ debug = False
 
 If you set `debug` to `True` you can see the steps of the reduction process, which is perfect for introspection because it also dumps the ast at every step.
 
-## In the interpreter
+### In the interpreter
 
 You can also run [`ilambda.hs`](ilambda.hs) in an interactive ghci session. But don't forget to use double backslashes (\\\\) (which in Markdown ironically needs 4 backslashes). 
 
@@ -86,9 +84,17 @@ CallStack (from HasCallStack):
 "b"
 ```
 
-## The future of this
+# **WTF** is lambda calculus
 
-### Files and variables
+From [Wikipedia - the free encyclopedia](https://en.wikipedia.org/wiki/Lambda_calculus)
+
+> Lambda calculus (also written as λ-calculus) is a formal system in mathematical logic for expressing computation based on function abstraction and application using variable binding and substitution. It is a universal model of computation that can be used to simulate any Turing machine. It was introduced by the mathematician Alonzo Church in the 1930s as part of his research into the foundations of mathematics.
+
+It is basically a first programming language from the 1930s before computers even existed! To use it here replace the lambda symbol (λ) with a back slash (\). 
+
+# The future of this
+
+## Files and variables
 
 Going further I'd like to introduce a file input mode where you can define variables that can then be used globally.
 
@@ -104,7 +110,7 @@ Or = \ab.a(True)b
 
 But that'd just become more and more like Haskell.
 
-### Haskell transpiler
+## Haskell transpiler
 
 Combined with the above you could convert your lambda expressions into haskell code. 
 
@@ -114,7 +120,7 @@ Combined with the above you could convert your lambda expressions into haskell c
 x a b = a b
 ```
 
-## Random Fun
+# Random Fun
 Just for fun I put the smallest "possible" compressed version of [`ilambda.hs`](ilambda.hs) (the already compressed version) here, which is just 5 lines of code. I'll bet you that you can't make it much smaller. The code is technically not exactly the same because errors are thrown implicitly but nice and shiny explicit errors that tell you exactly where you went wrong aren't really a requirement. 
 
 ```hs
