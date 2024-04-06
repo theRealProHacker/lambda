@@ -323,13 +323,9 @@
     from browser import document
     
     def input(ev):
-        try:
-            expr = parse_expr(document["input"].value)
-            result = reduce(expr)
-            document["output"].value = str(result)
-        except Exception as e:
-            return
-            document["output"].value = str(e)
+        expr = parse_expr(document["input"].value)
+        result = reduce(expr)
+        document["output"].value = str(result)
 
     
     # bind event 'click' on button to callback function
