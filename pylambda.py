@@ -5,12 +5,14 @@ It is mostly just a copy of the Haskell-Code
 but also does alpha-reduction which the Haskell-version cannot provide
 """
 
+import re
 from itertools import chain
 from string import ascii_letters, whitespace
 from dataclasses import dataclass
 
 Char = str
 letters = set(ascii_letters)
+whitespace_pattern = re.compile(r"^\s+")
 
 class Expression: 
     def all_vars(self)->set[Char]:
@@ -177,7 +179,15 @@ def _parse_expr(rest: str) -> list[Expression]:
                 raise ParseError("Found a special character in the head of a function")
             rest = ""
             if " " in body:
-                body, rest = body.split(None, 1)
+                count = 0
+                for i,c in enumerate(body):
+                    if c == ")":
+                        count -= 1
+                    elif c == "(":
+                        count += 1
+                    elif whitespace_pattern.match(body[i:]) and not count:
+                        body, rest = body[:i], body[i:].lstrip()
+                        break
             result.append(Func(head, parse_expr(body)))
         elif first == "(":
             closing = find_closing_paren(rest)
