@@ -44,7 +44,7 @@ class Expression:
             try:
                 self.rename_bound(f, rest.pop())
             except:
-                RuntimeError("Ran out of letters")
+                raise RuntimeError("Ran out of letters")
 
     def breduce(self):
         ...
