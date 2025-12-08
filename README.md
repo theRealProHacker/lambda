@@ -1,4 +1,4 @@
-# \ambda - A Lambda calculator written in Haskell
+# \lambda - A Lambda calculator written in Haskell
 
 > Inspired by the course "Funktionale Programmierung" @ FU Berlin
 
