@@ -43,8 +43,8 @@ class Expression:
             rest = letters - self.all_vars()
             try:
                 self.rename_bound(f, rest.pop())
-            except:
-                RuntimeError("Ran out of letters")
+            except KeyError:
+                raise RuntimeError("Ran out of letters")
 
     def breduce(self):
         ...
@@ -115,7 +115,13 @@ class Appl(Expression):
     xs: list[Expression]
 
     def __str__(self):
-        return "".join(str(x) for x in self.xs)
+        parts = []
+        for i, x in enumerate(self.xs):
+            s = str(x)
+            if i > 0 and type(x) is Appl:
+                s = f"({s})"
+            parts.append(s)
+        return "".join(parts)
     
     def all_vars(self)->set[Char]:
         return set(chain.from_iterable(x.all_vars() for x in self.xs))
@@ -177,6 +183,8 @@ def _parse_expr(rest: str) -> list[Expression]:
             head, body = rest.split(".", 1)
             if any(c in special_chars for c in head):
                 raise ParseError("Found a special character in the head of a function")
+            if any(c in whitespace for c in head):
+                raise ParseError("Found whitespace in the head of a function")
             rest = ""
             if " " in body:
                 count = 0
@@ -208,7 +216,12 @@ def _parse_expr(rest: str) -> list[Expression]:
 def parse_expr(text: str) -> Expression:
     if not text:
         raise ValueError("Can't parse empty input")
-    return Appl(_parse_expr(text))
+    if not text.strip():
+        raise ValueError("Can't parse whitespace-only input")
+    result = _parse_expr(text)
+    if len(result) == 1:
+        return result[0]
+    return Appl(result)
 
 def reduce(expr: Expression)->Expression:
     while True:
@@ -234,8 +247,8 @@ def simple_reduce(expr: Expression)->Expression:
             return simple_reduce(x)
         case Appl(xs):
             new_xs = []
-            for x in xs:
-                if type(x) is Appl:
+            for i, x in enumerate(xs):
+                if i == 0 and type(x) is Appl:
                     new_xs.extend(x.xs)
                 else:
                     new_xs.append(x)
