@@ -223,9 +223,20 @@ def parse_expr(text: str) -> Expression:
         return result[0]
     return Appl(result)
 
-def reduce(expr: Expression)->Expression:
+def reduce(expr: Expression, max_steps: int | None = None,
+           max_size: int | None = None)->Expression:
+    """Reduce to normal form. With max_steps/max_size set, gives up with a
+    RuntimeError instead of looping forever on diverging terms — growing
+    terms like (\\x.xxx)(\\x.xxx) explode in size long before any step
+    bound is reached, so both bounds are needed."""
+    steps = 0
     while True:
+        if max_steps is not None and steps >= max_steps:
+            raise RuntimeError(f"No normal form found within {max_steps} steps")
+        steps += 1
         old_expr = str(expr)
+        if max_size is not None and len(old_expr) > max_size:
+            raise RuntimeError(f"Expression grew beyond {max_size} characters")
         expr = simple_reduce(expr)
         reduction_type = "alpha"
         expr.areduce()

@@ -14,7 +14,8 @@ Tests cover 14 categories with 104 tests across:
   - Error handling (parse errors, empty input)
 
 ═══════════════════════════════════════════════════════════════════════
-  DISCOVERED BUGS
+  DISCOVERED BUGS — all FIXED (commit fb40aae); the tests below assert
+  the corrected behavior. Kept as documentation of the failure modes.
 ═══════════════════════════════════════════════════════════════════════
 
   BUG-1 (parse_expr wrapping):
@@ -601,3 +602,27 @@ class TestBreduceInternals:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])
+
+
+# 15. BOUNDED REDUCTION (max_steps — protects the web app from Ω freezes)
+
+class TestBoundedReduction:
+
+    def test_growing_divergent_term_raises_with_max_steps(self):
+        # Ω itself stabilizes (reduces to itself, hitting the fixpoint
+        # check), but this variant grows on every step and would loop
+        # forever without the bound.
+        growing = parse_expr(r"(\x.xxx)(\x.xxx)")
+        with pytest.raises(RuntimeError, match="No normal form"):
+            reduce(growing, max_steps=50)
+
+    def test_growing_term_hits_size_bound_before_step_bound(self):
+        # A tripling term explodes in size long before a generous step
+        # bound is reached — the size bound is what keeps it fast.
+        growing = parse_expr(r"(\x.xxx)(\x.xxx)")
+        with pytest.raises(RuntimeError, match="grew beyond"):
+            reduce(growing, max_steps=10_000, max_size=2000)
+
+    def test_normalizing_term_unaffected_by_max_steps(self):
+        expr = parse_expr(r"(\x.x)a")
+        assert str(reduce(expr, max_steps=50)) == "a"

@@ -1,8 +1,3 @@
-lambda.hi
-lambda.o
-lambda.exe
-lambda
-
-__pycache__
-
-_site
+__pycache__/
+_site/
+.gstack/
